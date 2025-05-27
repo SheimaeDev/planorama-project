@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const month = date.getMonth();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
         let startDay = new Date(year, month, 1).getDay();
-        startDay = (startDay + 6) % 7; 
+        startDay = (startDay + 6) % 7;
         title.textContent = date.toLocaleString('en-US', { month: 'long', year: 'numeric' });
 
         calendar.innerHTML = '';
@@ -94,7 +94,7 @@ document.addEventListener('DOMContentLoaded', function () {
     prevBtn.addEventListener('click', () => changeMonth(-1));
     nextBtn.addEventListener('click', () => changeMonth(1));
 
-    document.addEventListener('keydown', function(e) {
+    document.addEventListener('keydown', function (e) {
         if (e.key === 'ArrowLeft') {
             changeMonth(-1);
         } else if (e.key === 'ArrowRight') {
@@ -126,72 +126,149 @@ document.addEventListener('DOMContentLoaded', function () {
         showEventPopup(eventData);
     });
 
+    // function showEventPopup(eventData) {
+    //     if (!eventData) return;
+
+    //     const overlay = document.createElement('div');
+    //     overlay.id = 'popup-overlay';
+    //     overlay.setAttribute('role', 'dialog');
+    //     overlay.setAttribute('aria-modal', 'true');
+    //     overlay.setAttribute('aria-labelledby', 'popup-title');
+
+    //     overlay.addEventListener('click', function (e) {
+    //         if (e.target === overlay) closePopup();
+    //     });
+
+    //     const popup = document.createElement('div');
+    //     popup.classList.add('event-popup');
+    //     popup.setAttribute('tabindex', "-1");
+
+    //     const usersList = eventData.users || [];
+    //     const currentUserId = currentAuthUserId;
+
+    //     const startDate = new Date(eventData.start_date);
+    //     const endDate = new Date(eventData.end_date);
+
+    //     const startFormatted = `${startDate.toLocaleDateString('es-ES')} ${startDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`;
+    //     const endFormatted = `${endDate.toLocaleDateString('es-ES')} ${endDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`;
+
+    //     let creatorInfoHtml = `
+    //     <p><strong>Creado por:</strong> ${eventData.creator?.name || 'Desconocido'} (${eventData.creator?.email || ''})
+    //         ${eventData.is_creator ? '' : ' (Solo lectura)'}
+    //     </p>
+    // `;
+
+    //     const sharedUsers = usersList.filter(user => user.id !== eventData.creator_id);
+
+    //     let sharedWithHtml = '';
+    //     if (sharedUsers.length > 0) {
+    //         sharedWithHtml += `<p><strong>Compartido con:</strong></p><ul>`;
+    //         sharedUsers.forEach(user => {
+    //             sharedWithHtml += `<li>${user.name} (${user.email})</li>`;
+    //         });
+    //         sharedWithHtml += `</ul>`;
+    //     } else {
+    //         sharedWithHtml += `<p><strong>Compartido con:</strong> No hay otros usuarios.</p>`;
+    //     }
+
+    //     popup.innerHTML = `
+    //     <div class="popup-content" tabindex="-1">
+    //         <h2 id="popup-title">${eventData.title}</h2>
+    //         <p><strong>Inicio:</strong> ${startFormatted}</p>
+    //         <p><strong>Fin:</strong> ${endFormatted}</p>
+    //         ${creatorInfoHtml}
+    //         ${sharedWithHtml}
+    //         <div class="popup-buttons">
+    //             ${eventData.is_creator ? `
+    //                 <button class="btn btn-primary edit-btn" onclick="window.location.href='/events/${eventData.id}/edit'" aria-label="Editar evento">Editar</button>
+    //                 <button class="btn btn-secondary cancel-btn" onclick="window.location.href='/events/'" aria-label="Cerrar detalles del evento">Cerrar</button>
+    //             ` : `
+    //                 <button class="btn btn-secondary cancel-btn" onclick="window.location.href='/events/'" aria-label="Cerrar detalles del evento">Cerrar</button>
+    //             `}
+    //         </div>
+    //     </div>
+    // `;
+
+    //     overlay.appendChild(popup);
+    //     document.body.appendChild(overlay);
+
+    //     setTimeout(() => {
+    //         overlay.classList.add('visible');
+    //         popup.focus();
+    //     }, 50);
+    // }
     function showEventPopup(eventData) {
-        if (!eventData) return;
+    if (!eventData) return;
 
-        const overlay = document.createElement('div');
-        overlay.id = 'popup-overlay';
-        overlay.setAttribute('role', 'dialog');
-        overlay.setAttribute('aria-modal', 'true');
-        overlay.setAttribute('aria-labelledby', 'popup-title');
+    const overlay = document.createElement('div');
+    overlay.id = 'popup-overlay';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-labelledby', 'popup-title');
 
-        overlay.addEventListener('click', function (e) {
-            if (e.target === overlay) closePopup();
+    overlay.addEventListener('click', function (e) {
+        if (e.target === overlay) closePopup();
+    });
+
+    const popup = document.createElement('div');
+    popup.classList.add('event-popup');
+    popup.setAttribute('tabindex', "-1");
+
+    const usersList = eventData.users || [];
+    const currentUserId = currentAuthUserId;
+
+    const startDate = new Date(eventData.start_date);
+    const endDate = new Date(eventData.end_date);
+
+    const startFormatted = `${startDate.toLocaleDateString('en-US')} ${startDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
+    const endFormatted = `${endDate.toLocaleDateString('en-US')} ${endDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
+
+    let creatorInfoHtml = `
+        <p><strong>Created by:</strong> ${eventData.creator?.name || 'Unknown'} (${eventData.creator?.email || ''})
+            ${eventData.is_creator ? '' : ' (Read-only)'}
+        </p>
+    `;
+
+    const sharedUsers = usersList.filter(user => user.id !== eventData.creator_id);
+
+    let sharedWithHtml = '';
+    if (sharedUsers.length > 0) {
+        sharedWithHtml += `<p><strong>Shared with:</strong></p><ul>`;
+        sharedUsers.forEach(user => {
+            sharedWithHtml += `<li>${user.name} (${user.email})</li>`;
         });
-
-        const popup = document.createElement('div');
-        popup.classList.add('event-popup');
-        popup.setAttribute('tabindex', "-1");
-
-        const usersList = eventData.users || [];
-        const currentUserId = currentAuthUserId;
-
-        let creatorInfoHtml = `
-            <p><strong>Creator:</strong> ${eventData.creator?.name || 'Unknown'} (${eventData.creator?.email || ''})
-                ${eventData.is_creator ? '' : ' (Not editable)'}
-            </p>
-        `;
-
-        const sharedUsers = usersList.filter(user => user.id !== eventData.creator_id);
-
-        let sharedWithHtml = '';
-        if (sharedUsers.length > 0) {
-            sharedWithHtml += `<p><strong>Shared with:</strong></p><ul>`;
-            sharedUsers.forEach(user => {
-                sharedWithHtml += `<li>${user.name} (${user.email})</li>`;
-            });
-            sharedWithHtml += `</ul>`;
-        } else {
-            sharedWithHtml += `<p><strong>Shared with:</strong> No other users.</p>`;
-        }
-
-        popup.innerHTML = `
-            <div class="popup-content" tabindex="-1">
-                <h2 id="popup-title">${eventData.title}</h2>
-                <p><strong>Start:</strong> ${new Date(eventData.start_date).toLocaleString('en-US')}</p>
-                <p><strong>End:</strong> ${new Date(eventData.end_date).toLocaleString('en-US')}</p>
-                ${creatorInfoHtml}
-                ${sharedWithHtml}
-                <div class="popup-buttons">
-                    ${eventData.is_creator ? `
-                        <button class="btn btn-primary edit-btn" onclick="window.location.href='/events/${eventData.id}/edit'" aria-label="Edit event">Edit</button>
-                        <button class="btn btn-secondary cancel-btn" onclick="window.location.href='/events/'" aria-label="Close event details">Close</button>
-                    ` : `
-                        <button class="btn btn-secondary cancel-btn"onclick="window.location.href='/events/'" aria-label="Close event details">Close</button>
-                    `}
-
-                </div>
-            </div>
-        `;
-
-        overlay.appendChild(popup);
-        document.body.appendChild(overlay);
-
-        setTimeout(() => {
-            overlay.classList.add('visible');
-            popup.focus();
-        }, 50);
+        sharedWithHtml += `</ul>`;
+    } else {
+        sharedWithHtml += `<p><strong>Shared with:</strong> No other users.</p>`;
     }
+
+    popup.innerHTML = `
+        <div class="popup-content" tabindex="-1">
+            <h2 id="popup-title">${eventData.title}</h2>
+            <p><strong>Start:</strong> ${startFormatted}</p>
+            <p><strong>End:</strong> ${endFormatted}</p>
+            ${creatorInfoHtml}
+            ${sharedWithHtml}
+            <div class="popup-buttons">
+                ${eventData.is_creator ? `
+                    <button class="btn btn-primary edit-btn" onclick="window.location.href='/events/${eventData.id}/edit'" aria-label="Edit event">Edit</button>
+                    <button class="btn btn-secondary cancel-btn" onclick="window.location.href='/events/'" aria-label="Close event details">Close</button>
+                ` : `
+                    <button class="btn btn-secondary cancel-btn" onclick="window.location.href='/events/'" aria-label="Close event details">Close</button>
+                `}
+            </div>
+        </div>
+    `;
+
+    overlay.appendChild(popup);
+    document.body.appendChild(overlay);
+
+    setTimeout(() => {
+        overlay.classList.add('visible');
+        popup.focus();
+    }, 50);
+}
+
 
     function closePopup() {
         const overlay = document.getElementById('popup-overlay');
@@ -215,10 +292,10 @@ document.addEventListener('DOMContentLoaded', function () {
             }).then(response => {
                 if (response.ok) {
                     console.log(`Event ${eventId} deleted successfully.`);
-                    window.location.reload(); 
+                    window.location.reload();
                 } else {
                     response.json().then(errorData => {
-                        console.error('Error response from server:', errorData); 
+                        console.error('Error response from server:', errorData);
                         alert(`Error deleting the event: ${errorData.message || 'You might not have permission.'}`);
                     }).catch(() => {
                         alert('Error deleting the event. An unknown error occurred or you might not have permission.');
