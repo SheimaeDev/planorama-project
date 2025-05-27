@@ -6,9 +6,34 @@ use Illuminate\Database\Eloquent\Model;
 
 class Event extends Model
 {
+    protected $fillable = [
+        'title',
+        'start_date',
+        'end_date',
+        'creator_id',
+        'color_id',
+    ];
+
     public function users()
     {
-        return $this->belongsToMany(User::class)->withPivot('is_creator')->withTimestamps();
+        return $this->belongsToMany(User::class)
+            ->withPivot('is_creator')
+            ->withTimestamps();
+    }
+
+    public function sharedUsers()
+    {
+        return $this->belongsToMany(User::class)
+            ->withPivot('is_creator')
+            ->withTimestamps()
+            ->wherePivot('is_creator', false);
+    }
+
+    public function creatorUser()
+    {
+        return $this->users()
+            ->wherePivot('is_creator', true)
+            ->first();
     }
 
     public function creator()
