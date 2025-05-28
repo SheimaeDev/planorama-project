@@ -5,10 +5,21 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\NoteController;
 use App\Http\Controllers\NewsController;
+use Illuminate\Support\Facades\Auth;
+
+// Route::get('/', function () {
+//     return view('welcome');
+// });
+
 
 Route::get('/', function () {
+    if (Auth::check()) {
+        return redirect()->route('events.index');
+    }
+
     return view('welcome');
 });
+
 
 Route::middleware(['auth', 'verified'])->group(function () {
     // Resource routes for events protected by auth and verified
