@@ -53,5 +53,5 @@
 
 1. Clone the repository:  
    ```bash
-   git clone https://github.com/your-username/planorama.git
+   git clone https://github.com/SheimaeDev/planorama-project.git
    cd planorama
