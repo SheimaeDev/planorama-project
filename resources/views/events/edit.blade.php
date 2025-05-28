@@ -54,14 +54,13 @@
 
         <h3 class="text-lg font-semibold mt-4 mb-2">Share Event</h3>
 
-        <label for="share_emails">Add users by email (optional, emails separated by commas, max 4):</label>
+        <label for="share_emails">Add users by email (optional, emails separated by commas):</label>
         <input type="text" name="share_emails" id="share_emails" class="form-control"
                 value="{{ old('share_emails') }}" placeholder="email1@example.com, email2@example.com" aria-describedby="share-help">
         <small id="share-help" class="form-text text-muted">Enter emails of registered users to share the event.</small>
-        @if ($errors->has('share_emails'))
-            <div class="error text-red-600">{{ $message }}</div>
-        @endif
-
+            @error('share_emails')
+                <div class="error text-red-600">{{ $message }}</div>
+            @enderror
         @php
             $sharedUsers = $event->users->filter(function ($user) use ($event) {
                 return $user->id !== $event->creator_id;

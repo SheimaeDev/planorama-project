@@ -44,7 +44,7 @@
             <div class="error text-red-600">{{ $message }}</div>
         @enderror
 
-        <label for="share_emails">Share with (optional, emails separated by commas, max 4):</label>
+        <label for="share_emails">Share with (optional, emails separated by commas):</label>
         <input type="text" name="share_emails" id="share_emails" class="form-control" value="{{ old('share_emails') }}" placeholder="email1@example.com, email2@example.com" aria-describedby="share-help">
         <small id="share-help" class="form-text text-muted">Enter emails of registered users to share the event.</small>
         @if ($errors->has('share_emails'))

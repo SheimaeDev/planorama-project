@@ -104,58 +104,55 @@ class EventController extends Controller
         return view('events.edit', compact('event', 'colors', 'selectedDate'));
     }
 
-    public function update(Request $request, Event $event)
-    {
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-            'color_id' => 'nullable|exists:colors,id',
-            'shared_user_ids' => 'nullable|array',
-            'shared_user_ids.*' => 'exists:users,id',
-            'share_emails' => ['nullable', 'string', function ($attribute, $value, $fail) {
-                $emails = array_filter(array_map('trim', explode(',', $value)));
-                if (count($emails) > 4) {
-                    return $fail('You can only share with a maximum of 4 users.');
-                }
-                foreach ($emails as $email) {
-                    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                        return $fail("The email {$email} is not valid.");
-                    }
-                    if (!User::where('email', $email)->exists()) {
-                        return $fail("The email {$email} does not belong to a registered user.");
-                    }
-                }
-            }],
-        ]);
-
-        // Update basic data
-        $event->update($request->only('title', 'start_date', 'end_date', 'color_id'));
-
-        // Sync shared users
-        $creatorId = $event->creator_id;
-        $sharedUserIds = $request->input('shared_user_ids', []);
-        $finalUserIds = array_unique(array_merge([$creatorId], $sharedUserIds));
-
-        $syncData = [];
-        foreach ($finalUserIds as $userId) {
-            $syncData[$userId] = ['is_creator' => ($userId == $creatorId)];
-        }
-        $event->users()->sync($syncData);
-
-        // Process new emails to share
-        if ($request->share_emails) {
-            $emails = array_filter(array_map('trim', explode(',', $request->share_emails)));
+public function update(Request $request, Event $event)
+{
+    $validator = $request->validate([
+        'title' => 'required|string|max:255',
+        'start_date' => 'required|date',
+        'end_date' => 'required|date|after_or_equal:start_date',
+        'color_id' => 'nullable|exists:colors,id',
+        'shared_user_ids' => 'nullable|array',
+        'shared_user_ids.*' => 'exists:users,id',
+        'share_emails' => ['nullable', 'string', function ($attribute, $value, $fail) {
+            $emails = array_filter(array_map('trim', explode(',', $value)));
             foreach ($emails as $email) {
-                $userToShare = User::where('email', $email)->first();
-                if ($userToShare && !array_key_exists($userToShare->id, $syncData)) {
-                    $event->users()->attach($userToShare->id);
+                if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    return $fail("The email {$email} is not valid.");
+                }
+                if (!User::where('email', $email)->exists()) {
+                    return $fail("The email {$email} does not belong to a registered user.");
                 }
             }
-        }
+        }],
+    ]);
 
-        return redirect()->route('events.index', $event->id)->with('success', 'Event updated successfully');
+    // Si la validación pasa, continúa con la actualización
+    $event->update($request->only('title', 'start_date', 'end_date', 'color_id'));
+
+    // Sync shared users
+    $creatorId = $event->creator_id;
+    $sharedUserIds = $request->input('shared_user_ids', []);
+    $finalUserIds = array_unique(array_merge([$creatorId], $sharedUserIds));
+
+    $syncData = [];
+    foreach ($finalUserIds as $userId) {
+        $syncData[$userId] = ['is_creator' => ($userId == $creatorId)];
     }
+    $event->users()->sync($syncData);
+
+    // Process new emails to share
+    if ($request->share_emails) {
+        $emails = array_filter(array_map('trim', explode(',', $request->share_emails)));
+        foreach ($emails as $email) {
+            $userToShare = User::where('email', $email)->first();
+            if ($userToShare && !array_key_exists($userToShare->id, $syncData)) {
+                $event->users()->attach($userToShare->id);
+            }
+        }
+    }
+
+    return redirect()->route('events.index')->with('success', 'Event updated successfully');
+}
 
 
     public function destroy(Event $event)
