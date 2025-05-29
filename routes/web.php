@@ -22,17 +22,17 @@ Route::get('/', function () {
 
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    // Resource routes for events protected by auth and verified
     Route::resource('events', EventController::class);
 
     Route::resource('notes', NoteController::class);
 
     Route::get('/news', [NewsController::class, 'index'])->name('news.index');
 
-    // Profile routes
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::get('/events/day/{date?}', [EventController::class, 'showDayView'])->name('events.day');
+
 });
 
 require __DIR__.'/auth.php';

@@ -7,7 +7,7 @@ use App\Models\Event;
 use App\Models\Color;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Carbon\Carbon; // Import Carbon for date handling
+use Carbon\Carbon; 
 
 class EventController extends Controller
 {
@@ -36,7 +36,6 @@ class EventController extends Controller
         $selectedDate = $request->query('date');
         $colors = Color::all();
 
-        // Define default start and end times for the form
         $now = Carbon::now();
         $defaultStart = $selectedDate ? Carbon::parse($selectedDate)->setTime(9, 0)->format('Y-m-d\TH:i') : $now->format('Y-m-d\TH:i');
         $defaultEnd = $selectedDate ? Carbon::parse($selectedDate)->setTime(10, 0)->format('Y-m-d\TH:i') : $now->addHour()->format('Y-m-d\TH:i'); // Default end 1 hour after start
@@ -69,7 +68,6 @@ class EventController extends Controller
 
         $creator = Auth::user();
 
-        // Create event
         $event = Event::create([
             'title' => $request->title,
             'start_date' => $request->start_date,
@@ -78,10 +76,8 @@ class EventController extends Controller
             'color_id' => $request->color_id,
         ]);
 
-        // Associate creator
         $event->users()->attach($creator->id, ['is_creator' => true]);
 
-        // Process shared users by email
         if ($request->filled('share_emails')) {
             $emails = array_filter(array_map('trim', explode(',', $request->share_emails)));
             foreach ($emails as $email) {
@@ -104,60 +100,73 @@ class EventController extends Controller
         return view('events.edit', compact('event', 'colors', 'selectedDate'));
     }
 
-public function update(Request $request, Event $event)
-{
-    $validator = $request->validate([
-        'title' => 'required|string|max:255',
-        'start_date' => 'required|date',
-        'end_date' => 'required|date|after_or_equal:start_date',
-        'color_id' => 'nullable|exists:colors,id',
-        'shared_user_ids' => 'nullable|array',
-        'shared_user_ids.*' => 'exists:users,id',
-        'share_emails' => ['nullable', 'string', function ($attribute, $value, $fail) {
-            $emails = array_filter(array_map('trim', explode(',', $value)));
+    public function update(Request $request, Event $event)
+    {
+        $validator = $request->validate([
+            'title' => 'required|string|max:255',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+            'color_id' => 'nullable|exists:colors,id',
+            'shared_user_ids' => 'nullable|array',
+            'shared_user_ids.*' => 'exists:users,id',
+            'share_emails' => ['nullable', 'string', function ($attribute, $value, $fail) {
+                $emails = array_filter(array_map('trim', explode(',', $value)));
+                foreach ($emails as $email) {
+                    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                        return $fail("The email {$email} is not valid.");
+                    }
+                    if (!User::where('email', $email)->exists()) {
+                        return $fail("The email {$email} does not belong to a registered user.");
+                    }
+                }
+            }],
+        ]);
+
+        // Si la validación pasa, continúa con la actualización
+        $event->update($request->only('title', 'start_date', 'end_date', 'color_id'));
+
+        // Sync shared users
+        $creatorId = $event->creator_id;
+        $sharedUserIds = $request->input('shared_user_ids', []);
+        $finalUserIds = array_unique(array_merge([$creatorId], $sharedUserIds));
+
+        $syncData = [];
+        foreach ($finalUserIds as $userId) {
+            $syncData[$userId] = ['is_creator' => ($userId == $creatorId)];
+        }
+        $event->users()->sync($syncData);
+
+        // Process new emails to share
+        if ($request->share_emails) {
+            $emails = array_filter(array_map('trim', explode(',', $request->share_emails)));
             foreach ($emails as $email) {
-                if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                    return $fail("The email {$email} is not valid.");
+                $userToShare = User::where('email', $email)->first();
+                if ($userToShare && !array_key_exists($userToShare->id, $syncData)) {
+                    $event->users()->attach($userToShare->id);
                 }
-                if (!User::where('email', $email)->exists()) {
-                    return $fail("The email {$email} does not belong to a registered user.");
-                }
-            }
-        }],
-    ]);
-
-    // Si la validación pasa, continúa con la actualización
-    $event->update($request->only('title', 'start_date', 'end_date', 'color_id'));
-
-    // Sync shared users
-    $creatorId = $event->creator_id;
-    $sharedUserIds = $request->input('shared_user_ids', []);
-    $finalUserIds = array_unique(array_merge([$creatorId], $sharedUserIds));
-
-    $syncData = [];
-    foreach ($finalUserIds as $userId) {
-        $syncData[$userId] = ['is_creator' => ($userId == $creatorId)];
-    }
-    $event->users()->sync($syncData);
-
-    // Process new emails to share
-    if ($request->share_emails) {
-        $emails = array_filter(array_map('trim', explode(',', $request->share_emails)));
-        foreach ($emails as $email) {
-            $userToShare = User::where('email', $email)->first();
-            if ($userToShare && !array_key_exists($userToShare->id, $syncData)) {
-                $event->users()->attach($userToShare->id);
             }
         }
-    }
 
-    return redirect()->route('events.index')->with('success', 'Event updated successfully');
-}
+        return redirect()->route('events.index')->with('success', 'Event updated successfully');
+    }
 
 
     public function destroy(Event $event)
     {
         $event->delete();
         return redirect()->route('events.index')->with('success', 'Event deleted successfully');
+    }
+    public function showDayView(?string $date = null)
+    {
+        $selectedDate = $date ? Carbon::parse($date) : Carbon::now();
+        $startOfDay = $selectedDate->copy()->startOfDay();
+        $endOfDay = $selectedDate->copy()->endOfDay();
+        $events = Event::where(function ($query) use ($startOfDay, $endOfDay) {
+            $query->where('start_date', '<', $endOfDay)->where('end_date', '>', $startOfDay);
+        })->orderBy('start_date')->with('color', 'creator', 'users')->get();
+        return view('events.day', [
+            'selectedDate' => $selectedDate,
+            'events' => $events,
+        ]);
     }
 }

@@ -1,5 +1,6 @@
 .calendar-main-wrapper {
-    max-width: 1200px;
+    max-width: 1400px;
+    height: 2400px;
     margin: 20px auto;
     padding: 0 20px;
     box-sizing: border-box;
@@ -31,6 +32,10 @@
     font-size: 0.9rem;
     border-bottom: 1px solid #e0e0e0;
 }
+.more-events-indicator {
+    font-weight: 600;
+    text-align: center;
+}
 
 .calendar-grid .day {
     background-color: #fff;
@@ -45,6 +50,8 @@
     outline: none;
     position: relative;
     z-index: 1;
+  overflow: hidden; 
+  max-height: 120px; 
 }
 
 .calendar-grid .day:hover,
