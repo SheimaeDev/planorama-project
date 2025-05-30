@@ -71,8 +71,8 @@
         <a href="{{ route('events.create', ['date' => $selectedDate->format('Y-m-d')]) }}" class="button secondary" style="flex-grow: 1; max-width: 200px;">
             Create new event
         </a>
-        <a href="{{ route('events.index') }}" class="button secondary" style="max-width: 200px; margin-left: auto;">
-            Back to calendar
+       <a href="#" onclick="history.back(); return false;" class="button secondary" style="max-width: 200px; margin-left: auto;">
+            Go back
         </a>
     </div>
 </div>

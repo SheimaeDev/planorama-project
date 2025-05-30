@@ -38,7 +38,7 @@
     padding-right: 4px;
 }
 
-/* Scroll estilizado solo si se requiere */
+
 .news-title::-webkit-scrollbar {
     width: 4px;
 }

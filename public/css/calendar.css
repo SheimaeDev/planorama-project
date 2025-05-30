@@ -99,11 +99,11 @@
 
 #calendar-controls {
     display: flex;
-    justify-content: center;
     align-items: center;
     gap: 15px;
     margin-bottom: 25px;
 }
+
 
 .calendar-nav-btn {
     background-color: #4a4a4a;
@@ -298,6 +298,7 @@
     background-color: #e0a800;
     box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);
 }
+
 
 @media (max-width: 1200px) {
     .calendar-main-wrapper {

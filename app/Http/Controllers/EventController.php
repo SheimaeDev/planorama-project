@@ -7,10 +7,24 @@ use App\Models\Event;
 use App\Models\Color;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Carbon\Carbon; 
+use Carbon\Carbon;
 
+/**
+ * Class EventController
+ * @package App\Http\Controllers
+ *
+ * Controlador que gestiona todas las operaciones relacionadas con los eventos.
+ * Esto incluye la visualización, creación, edición, actualización y eliminación de eventos,
+ * así como la gestión de usuarios asociados a los eventos.
+ */
 class EventController extends Controller
 {
+    /**
+     * Muestra una lista de todos los eventos en los que el usuario autenticado es el creador
+     * o está asociado como participante.
+     *
+     * @return \Illuminate\View\View Retorna la vista 'events.index' con los eventos y colores.
+     */
     public function index()
     {
         $userId = Auth::id();
@@ -31,6 +45,13 @@ class EventController extends Controller
         return view('events.index', compact('events', 'colors'));
     }
 
+    /**
+     * Muestra el formulario para crear un nuevo evento.
+     *
+     * @param  \Illuminate\Http\Request  $request  La instancia de la petición HTTP.
+     * @return \Illuminate\View\View Retorna la vista 'events.create' con la fecha seleccionada
+     * y los colores disponibles.
+     */
     public function create(Request $request)
     {
         $selectedDate = $request->query('date');
@@ -43,6 +64,14 @@ class EventController extends Controller
         return view('events.create', compact('selectedDate', 'colors', 'defaultStart', 'defaultEnd'));
     }
 
+    /**
+     * Almacena un nuevo evento en la base de datos.
+     * Realiza la validación de los datos de entrada, crea el evento y asocia
+     * a los usuarios compartidos si se proporcionan sus correos electrónicos.
+     *
+     * @param  \Illuminate\Http\Request  $request  La instancia de la petición HTTP con los datos del evento.
+     * @return \Illuminate\Http\RedirectResponse Redirige a la ruta 'events.index' con un mensaje de éxito.
+     */
     public function store(Request $request)
     {
         $request->validate([
@@ -76,12 +105,14 @@ class EventController extends Controller
             'color_id' => $request->color_id,
         ]);
 
+        // Adjunta al creador como participante del evento
         $event->users()->attach($creator->id, ['is_creator' => true]);
 
         if ($request->filled('share_emails')) {
             $emails = array_filter(array_map('trim', explode(',', $request->share_emails)));
             foreach ($emails as $email) {
                 $userToShare = User::where('email', $email)->first();
+                // Adjunta usuarios si existen y no son el creador
                 if ($userToShare && $userToShare->id !== $creator->id) {
                     $event->users()->attach($userToShare->id, ['is_creator' => false]);
                 }
@@ -91,7 +122,13 @@ class EventController extends Controller
         return redirect()->route('events.index')->with('success', 'Event created successfully');
     }
 
-
+    /**
+     * Muestra el formulario para editar un evento existente.
+     *
+     * @param  \App\Models\Event  $event  La instancia del evento a editar.
+     * @param  \Illuminate\Http\Request  $request  La instancia de la petición HTTP.
+     * @return \Illuminate\View\View Retorna la vista 'events.edit' con el evento, colores y fecha seleccionada.
+     */
     public function edit(Event $event, Request $request)
     {
         $selectedDate = $request->query('date');
@@ -100,9 +137,18 @@ class EventController extends Controller
         return view('events.edit', compact('event', 'colors', 'selectedDate'));
     }
 
+    /**
+     * Actualiza un evento existente en la base de datos.
+     * Realiza la validación de los datos, actualiza los detalles del evento y sincroniza
+     * los usuarios asociados al evento, incluyendo la posibilidad de añadir nuevos usuarios por email.
+     *
+     * @param  \Illuminate\Http\Request  $request  La instancia de la petición HTTP con los datos actualizados.
+     * @param  \App\Models\Event  $event  La instancia del evento a actualizar.
+     * @return \Illuminate\Http\RedirectResponse Redirige a la ruta 'events.index' con un mensaje de éxito.
+     */
     public function update(Request $request, Event $event)
     {
-        $validator = $request->validate([
+        $request->validate([ // Se renombra la variable de $validator a $request para seguir usando el helper validate()
             'title' => 'required|string|max:255',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
@@ -122,10 +168,8 @@ class EventController extends Controller
             }],
         ]);
 
-        // Si la validación pasa, continúa con la actualización
         $event->update($request->only('title', 'start_date', 'end_date', 'color_id'));
 
-        // Sync shared users
         $creatorId = $event->creator_id;
         $sharedUserIds = $request->input('shared_user_ids', []);
         $finalUserIds = array_unique(array_merge([$creatorId], $sharedUserIds));
@@ -134,9 +178,10 @@ class EventController extends Controller
         foreach ($finalUserIds as $userId) {
             $syncData[$userId] = ['is_creator' => ($userId == $creatorId)];
         }
+        // Sincroniza los usuarios existentes, manteniendo el creador
         $event->users()->sync($syncData);
 
-        // Process new emails to share
+        // Añade nuevos usuarios compartidos por email que no estén ya asociados
         if ($request->share_emails) {
             $emails = array_filter(array_map('trim', explode(',', $request->share_emails)));
             foreach ($emails as $email) {
@@ -150,23 +195,49 @@ class EventController extends Controller
         return redirect()->route('events.index')->with('success', 'Event updated successfully');
     }
 
-
+    /**
+     * Elimina un evento de la base de datos.
+     *
+     * @param  \App\Models\Event  $event  La instancia del evento a eliminar.
+     * @return \Illuminate\Http\RedirectResponse Redirige a la ruta 'events.index' con un mensaje de éxito.
+     */
     public function destroy(Event $event)
     {
         $event->delete();
         return redirect()->route('events.index')->with('success', 'Event deleted successfully');
     }
+
+    /**
+     * Muestra la vista de un día específico con sus eventos.
+     * Recupera todos los eventos que se superponen con el día seleccionado.
+     *
+     * @param  string|null  $date  La fecha a mostrar en formato 'YYYY-MM-DD'. Si es nulo, usa la fecha actual.
+     * @return \Illuminate\View\View Retorna la vista 'events.day' con la fecha seleccionada y los eventos de ese día.
+     */
     public function showDayView(?string $date = null)
     {
         $selectedDate = $date ? Carbon::parse($date) : Carbon::now();
         $startOfDay = $selectedDate->copy()->startOfDay();
         $endOfDay = $selectedDate->copy()->endOfDay();
+
         $events = Event::where(function ($query) use ($startOfDay, $endOfDay) {
             $query->where('start_date', '<', $endOfDay)->where('end_date', '>', $startOfDay);
         })->orderBy('start_date')->with('color', 'creator', 'users')->get();
+
         return view('events.day', [
             'selectedDate' => $selectedDate,
             'events' => $events,
         ]);
+    }
+
+    /**
+     * Redirige al índice de eventos. Este método está en desuso temporalmente.
+     *
+     * @param  int  $id  El ID del evento (actualmente no utilizado).
+     * @return \Illuminate\Http\RedirectResponse Redirige a la ruta 'events.index'.
+     */
+    public function show($id)
+    {
+        return redirect()->route('events.index');
     }
 }

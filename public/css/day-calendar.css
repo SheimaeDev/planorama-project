@@ -1,7 +1,7 @@
 .day-calendar-wrapper {
-    max-width: 500px; 
+    max-width: 500px;
     margin: 20px auto;
-    padding: 16px;
+    padding: 12px;
     background: #fff;
     border-radius: 12px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
@@ -42,7 +42,7 @@
 
 #day-events-container {
     position: relative;
-    height: 1440px; 
+    height: 960px; 
     border-left: 1px solid #dadce0;
     border-right: 1px solid #dadce0;
     background: #fcfcfc;
@@ -50,36 +50,35 @@
 
 .hour-slot {
     position: relative;
-    height: 60px;
+    height: 40px;
     border-top: 1px solid #e8eaed;
-    padding-left: 60px;
+    padding-left: 48px;
     box-sizing: border-box;
 }
 
 .hour-label {
     position: absolute;
     left: 0;
-    top: 6px;
-    width: 50px;
+    top: 4px;
+    width: 40px;
     text-align: right;
-    font-size: 0.75rem;
+    font-size: 0.65rem;
     color: #5f6368;
 }
 
 .events-in-slot {
     position: relative;
     height: 100px;
-    overflow: hidden; 
+    overflow: hidden;
     white-space: nowrap;
 }
 
 .day-event-item {
     position: absolute;
     top: 0;
-    width: 200px; 
-    max-width: 300px;
-    padding: 4px 6px;
-    font-size: 12px;
+    width: 90%;
+    padding: 2px 4px;
+    font-size: 11px;
     border-radius: 4px;
     background-color: #e0f7fa;
     color: #006064;
@@ -89,7 +88,6 @@
     text-overflow: ellipsis;
     z-index: 10;
 }
-
 
 .day-event-item:hover {
     opacity: 0.9;
@@ -123,4 +121,51 @@
 
 .button.secondary:hover {
     background-color: #e8f0fe;
+}
+
+@media (max-width: 768px) {
+    .day-calendar-wrapper {
+        max-width: 95%;
+        padding: 8px;
+    }
+
+    .day-calendar-title {
+        font-size: 1.2rem;
+    }
+
+    .day-navigation {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .day-navigation button {
+        width: 32px;
+        height: 32px;
+    }
+
+    .hour-label {
+        font-size: 0.6rem;
+        width: 36px;
+    }
+
+    .hour-slot {
+        padding-left: 40px;
+        height: 36px;
+    }
+
+    .day-event-item {
+        font-size: 10px;
+        padding: 1px 3px;
+    }
+
+    .button.secondary {
+        font-size: 0.8rem;
+        padding: 6px 12px;
+        max-width: 100%;
+    }
+
+    .mt-4 {
+        flex-direction: column;
+        align-items: stretch;
+    }
 }
