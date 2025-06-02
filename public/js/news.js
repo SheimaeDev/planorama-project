@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     horizontalCarousels.forEach(carousel => {
         const original = carousel.innerHTML;
-        carousel.innerHTML += original; // Duplicar para scroll infinito
+        carousel.innerHTML += original; 
 
         carousel.addEventListener('mouseenter', () => {
             carousel.style.animationPlayState = 'paused';
@@ -44,33 +44,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Hacer que toda la tarjeta sea clickeable y abra el enlace en una nueva pestaña
     document.querySelectorAll('.news-card').forEach(card => {
         card.addEventListener('click', (event) => {
             const articleLink = card.querySelector('.news-link');
 
             if (articleLink) {
-                window.open(articleLink.href, '_blank'); // Abre en una nueva pestaña
+                window.open(articleLink.href, '_blank'); 
             }
         });
     });
 });
-
-
-
-// document.addEventListener('DOMContentLoaded', () => {
-//     const newsCards = document.querySelectorAll('.news-card, .most-popular-news');
-
-//     newsCards.forEach(card => {
-//         card.addEventListener('keydown', (event) => {
-//             if (event.key === 'Enter' || event.key === ' ') {
-//                 const link = card.querySelector('.news-button, .prominent-button');
-//                 if (link) {
-//                     link.click();
-//                 }
-//             }
-//         });
-
-//         card.setAttribute('tabindex', '0'); 
-//     });
-// });
